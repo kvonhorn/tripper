@@ -1,0 +1,21 @@
+<template name="results">
+<div class="searchResults">
+  {{#if prevPageToken}}
+  <a id="loadPrevPage">Load previous page of results</a>
+  {{/if}}
+  {{#if prevAndNextPageTokensExist}}&bull;{{/if}}
+  {{#if nextPageToken}}
+  <a id="loadNextPage">Load next page of results</a>
+  {{/if}}
+  <br/>
+
+  {{#each items}}
+  {{> result}}
+  {{/each}}
+</div>
+
+<!--
+<pre>{{lastResultsDebug}}</pre>
+-->
+</template>
+

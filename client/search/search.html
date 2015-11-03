@@ -1,0 +1,14 @@
+<template name="search">
+<div>
+<form class="search">
+  <input id="searchText" name="searchText" type="text" placeholder="Search YouTube for videos" >
+  <button id="searchButton" class="btn btn-default" type="submit" >
+    <span class="glyphicon glyphicon-search"></span>
+  </button>
+
+  <label class="radio-inline"><input type="radio" id="resultsPerPage" name="resultsPerPage" value="3" checked="{{#if resultsPerPage3}}true{{/if}}" />3</label>
+  <label class="radio-inline"><input type="radio" id="resultsPerPage" name="resultsPerPage" value="7" checked="{{#if resultsPerPage7}}true{{/if}}" />7</label>
+  <label class="radio-inline"><input type="radio" id="resultsPerPage" name="resultsPerPage" value="17" checked="{{#if resultsPerPage17}}true{{/if}}" />17</label>
+</form>
+</div>
+</template>
