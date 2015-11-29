@@ -62,13 +62,34 @@ audioExtractions.removeProcess = removeProcess;
 audioExtractions.addProcess = addProcess;
 
 
-// Called when "Download audio" button is pressed
-// TODO: Untangle this spaghetti
-// TODO: Set downloaded file names to videoName rather than videoId
-downloadAudio = function(videoId, site, videoName) {
-  console.log("Downloading audio from " + site + ": " + videoId + "/" + videoName);
+// Called to extract audio from downloaded video once the video is downloaded
+extractAudioFromVideo = function(videoName, videoPath) {
+  var extractionPath = audioDir + "/" + videoName.replace(/\s+/g, "_") + ".aac";
+  console.log("Extracting audio from " + videoPath + " to " + extractionPath);
+  
+  var extractionProcessToSpawn = audioExtractCmd;
+  extractionProcessToSpawn = extractionProcessToSpawn.replace("{inputFilename}", videoPath);
+  extractionProcessToSpawn = extractionProcessToSpawn.replace("{outputFilename}", extractionPath);
 
-  var downloadPath = workingDir + "/" + videoName.replace(/\s+/g, "_") + ".mp4";
+  console.log("Extracting audio with command " + extractionProcessToSpawn);
+  extractionProcessToSpawn = extractionProcessToSpawn.split(" ");
+  var extractionProcess = Process.spawn(extractionProcessToSpawn[0], extractionProcessToSpawn.slice(1));
+
+  audioExtractions.addProcess(extractionProcess);
+  // TODO: Move the video rename into downloadAudio()
+  extractionProcess.on("close", function(code) {  // Move video file to video dir
+    extractionProcessReturnCode = code;
+    fs.rename(videoPath, videoPath.replace(workingDir, videoDir), function(err) {
+      if(err) throw err;
+      console.log("Video successfully moved");
+    });
+  });
+};
+
+// Called when "Download audio" button is pressed
+downloadAudio = function(videoId, site, videoName) {
+  var cleanVideoName = videoName.replace(/\s+/g, "_");
+  var downloadPath = workingDir + "/" + cleanVideoName;
   var processToSpawn = youtubedlCmd;
   processToSpawn = processToSpawn.replace("{videoId}", videoId);
   processToSpawn = processToSpawn.replace("{outputFilename}", downloadPath);
@@ -83,26 +104,16 @@ downloadAudio = function(videoId, site, videoName) {
     if(0 !== code) {
       console.log("Download exited with non-zero exit code. Not extracting audio.")
     } else {
-      var extractionPath = audioDir + "/" + videoName.replace(/\s+/g, "_") + ".aac";
-      console.log("Extracting audio from " + downloadPath + " to " + extractionPath);
-      
-      var extractionProcessToSpawn = audioExtractCmd;
-      extractionProcessToSpawn = extractionProcessToSpawn.replace("{inputFilename}", downloadPath);
-      extractionProcessToSpawn = extractionProcessToSpawn.replace("{outputFilename}", extractionPath);
-
-      console.log("Extracting audio with command " + extractionProcessToSpawn);
-      extractionProcessToSpawn = extractionProcessToSpawn.split(" ");
-      var extractionProcess = Process.spawn(extractionProcessToSpawn[0], extractionProcessToSpawn.slice(1));
-
-      audioExtractions.addProcess(extractionProcess);
-      extractionProcess.on("close", function(code) {  // Move video file to video dir
-        fs.rename(downloadPath, downloadPath.replace(workingDir, videoDir), function(err) {
-          if(err) throw err;
-          console.log("Video successfully moved");
-        });
+      var videoFiles = fs.readdirSync(workingDir);
+      console.log("videoFiles: " + videoFiles);
+      // Get the name of the downloaded file
+      var matchingVideoFiles = videoFiles.filter(function(element, index, array) {
+        return element.indexOf(cleanVideoName) > -1;
       });
+      var videoToExtractAudioFrom = workingDir + "/" + matchingVideoFiles[0];
+      console.log("Extracting audio from video " + videoToExtractAudioFrom);
+      extractAudioFromVideo(videoName, videoToExtractAudioFrom);
     }
-
   });
 }
 
